@@ -1,9 +1,8 @@
 --[[
-    GINGERBREAD MONITOR 2025 - PERSISTENT & RESPONSIVE
-    - CoreGui/gethui: Chống mất GUI 100%.
-    - Responsive: Tự động co giãn theo mọi độ phân giải màn hình.
-    - Toggle Button: Nút ẩn/hiện hệ thống.
-    - Logic 12 phút: Kick nếu số không đổi.
+    GINGERBREAD MONITOR 2025 - PHIÊN BẢN CHỮ SIÊU LỚN (EQUAL SIZE)
+    - Cả 3 dòng (Tổng, Chênh lệch, Thời gian) có kích thước to bằng nhau.
+    - Chống mất GUI 100% bằng CoreGui/gethui.
+    - Nền Đen/Chữ Xanh -> Lỗi: Nền Đỏ/Chữ Đen.
 ]]
 
 task.wait(15)
@@ -24,7 +23,7 @@ local HopGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local UIList = Instance.new("UIListLayout")
 
--- Gắn vào CoreGui hoặc gethui (Học tập từ script bạn gửi)
+-- Gắn vào khu vực bất tử (CoreGui hoặc gethui)
 if gethui then
     HopGui.Parent = gethui()
 elseif game:GetService("CoreGui"):FindFirstChild("RobloxGui") then
@@ -33,11 +32,10 @@ else
     HopGui.Parent = game:GetService("CoreGui")
 end
 
-HopGui.Name = "GingerSystem_V3"
+HopGui.Name = "GingerSystem_MaxFont"
 HopGui.IgnoreGuiInset = true
 HopGui.DisplayOrder = 999999
 
--- Khung chính full màn hình
 MainFrame.Name = "MainFrame"
 MainFrame.Parent = HopGui
 MainFrame.Size = UDim2.new(1, 0, 1, 0)
@@ -48,33 +46,31 @@ MainFrame.ZIndex = 1
 UIList.Parent = MainFrame
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIList.VerticalAlignment = Enum.VerticalAlignment.Center
-UIList.Padding = UDim.new(0.05, 0)
+UIList.Padding = UDim.new(0.01, 0) -- Khoảng cách cực nhỏ để chữ nở to nhất
 
--- Hàm tạo nhãn tự co giãn
-local function createLabel(name, heightScale)
+-- Hàm tạo nhãn với kích thước đồng nhất
+local function createLabel(name)
     local label = Instance.new("TextLabel")
     label.Name = name
     label.Parent = MainFrame
-    label.Size = UDim2.new(0.8, 0, heightScale, 0) -- Chiều ngang chiếm 80% màn hình
+    -- Mỗi dòng chiếm ~30% chiều cao để 3 dòng cộng lại là ~90% màn hình
+    label.Size = UDim2.new(0.98, 0, 0.3, 0) 
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.FredokaOne
-    label.TextColor3 = Color3.fromRGB(0, 255, 127) -- Màu xanh mặc định
+    label.TextColor3 = Color3.fromRGB(0, 255, 127) -- Chữ xanh
     label.TextScaled = true
     label.RichText = true
-    
-    -- Ràng buộc tỷ lệ để không bị méo khi đổi độ phân giải
-    local aspect = Instance.new("UIAspectRatioConstraint")
-    aspect.AspectRatio = 5 -- Tỷ lệ rộng:cao
-    aspect.Parent = label
+    label.Text = ""
     
     return label
 end
 
-local LTotal = createLabel("LTotal", 0.3)
-local LDiff = createLabel("LDiff", 0.2)
-local LTime = createLabel("LTime", 0.1)
+-- Khởi tạo 3 dòng to bằng nhau
+local LTotal = createLabel("LTotal") -- Dòng 1
+local LDiff  = createLabel("LDiff")  -- Dòng 2
+local LTime  = createLabel("LTime")  -- Dòng 3
 
--- Nút Bấm Ẩn/Hiện (Nằm trên cùng)
+-- Nút Bấm Ẩn/Hiện
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Name = "ToggleBtn"
 ToggleBtn.Parent = HopGui
@@ -85,7 +81,7 @@ ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.Text = "ẨN / HIỆN"
 ToggleBtn.Font = Enum.Font.FredokaOne
 ToggleBtn.TextSize = 14
-ToggleBtn.ZIndex = 10 -- Luôn nằm trên MainFrame
+ToggleBtn.ZIndex = 10
 
 ToggleBtn.MouseButton1Click:Connect(function()
     isVisible = not isVisible
@@ -122,9 +118,13 @@ end
 -- Vòng lặp cập nhật (Mỗi giây)
 task.spawn(function()
     while true do
+        -- Cập nhật Thời gian
         local elapsed = os.time() - startTime
-        LTime.Text = math.floor(elapsed / 3600) .. " : " .. math.floor((elapsed % 3600) / 60)
+        local h = math.floor(elapsed / 3600)
+        local m = math.floor((elapsed % 3600) / 60)
+        LTime.Text = h .. " : " .. m
         
+        -- Cập nhật Số liệu
         local currentVal = GetValue()
         if currentVal then
             LTotal.Text = tostring(currentVal)
@@ -141,6 +141,7 @@ end)
 
 -- Vòng lặp kiểm tra Kick (12 phút)
 task.spawn(function()
+    -- Lấy mốc dữ liệu đầu tiên
     repeat lastValue = GetValue() task.wait(1) until lastValue ~= nil
     
     while true do
@@ -149,13 +150,13 @@ task.spawn(function()
         
         if newVal ~= nil then
             if newVal == lastValue then
-                ApplyStyle(true) -- Chuyển sang Đỏ/Đen
+                ApplyStyle(true) -- Đổi màu cảnh báo
                 task.wait(2)
-                player:Kick("\n[HỆ THỐNG]\nSố Gingerbread không đổi trong 12 phút!")
+                player:Kick("\n[HỆ THỐNG]\nGingerbread không thay đổi trong 12 phút!")
                 return
             else
                 lastValue = newVal
-                ApplyStyle(false) -- Giữ Xanh/Đen
+                ApplyStyle(false) -- Trở lại bình thường
             end
         end
     end
