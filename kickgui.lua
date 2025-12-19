@@ -10,7 +10,7 @@ task.wait(15)
 local player = game.Players.LocalPlayer
 local CURRENCY_NAME = "gingerbread_2025"
 local CHECK_INTERVAL = 12 * 60
-local UI_REFRESH_RATE = 20 -- 20 giây cập nhật một lần để siêu nhẹ CPU
+local UI_REFRESH_RATE = 60 -- 20 giây cập nhật một lần để siêu nhẹ CPU
 
 local startTime = os.time()
 local lastValue = -1
