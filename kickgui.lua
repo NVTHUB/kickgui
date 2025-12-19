@@ -1,8 +1,8 @@
---[[
-    GINGERBREAD MONITOR 2025 - PHIÊN BẢN CHỮ SIÊU LỚN (EQUAL SIZE)
-    - Cả 3 dòng (Tổng, Chênh lệch, Thời gian) có kích thước to bằng nhau.
-    - Chống mất GUI 100% bằng CoreGui/gethui.
-    - Nền Đen/Chữ Xanh -> Lỗi: Nền Đỏ/Chữ Đen.
+--[[ 
+    GINGERBREAD MONITOR 2025 - PHIÊN BẢN SIÊU NHẸ (20s REFRESH)
+    - Cập nhật GUI mỗi 20 giây (Tối ưu CPU tối đa).
+    - Giữ nguyên: 3 dòng to bằng nhau, Chống mất GUI, Nút Ẩn/Hiện.
+    - Logic 12 phút: Kick nếu số không đổi.
 ]]
 
 task.wait(15)
@@ -10,11 +10,15 @@ task.wait(15)
 local player = game.Players.LocalPlayer
 local CURRENCY_NAME = "gingerbread_2025"
 local CHECK_INTERVAL = 12 * 60
+local UI_REFRESH_RATE = 20 -- 20 giây cập nhật một lần để siêu nhẹ CPU
 
 local startTime = os.time()
 local lastValue = -1
-local isErrorState = false
+local displayDiff = 0 
 local isVisible = true
+
+-- TỐI ƯU: Require module một lần duy nhất
+local ClientDataModule = require(game.ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("Core"):WaitForChild("ClientData"))
 
 --------------------------------------------------
 -- HỆ THỐNG GIAO DIỆN (BẤT TỬ)
@@ -23,7 +27,6 @@ local HopGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local UIList = Instance.new("UIListLayout")
 
--- Gắn vào khu vực bất tử (CoreGui hoặc gethui)
 if gethui then
     HopGui.Parent = gethui()
 elseif game:GetService("CoreGui"):FindFirstChild("RobloxGui") then
@@ -32,7 +35,7 @@ else
     HopGui.Parent = game:GetService("CoreGui")
 end
 
-HopGui.Name = "GingerSystem_MaxFont"
+HopGui.Name = "GingerSystem_UltraLite"
 HopGui.IgnoreGuiInset = true
 HopGui.DisplayOrder = 999999
 
@@ -41,38 +44,30 @@ MainFrame.Parent = HopGui
 MainFrame.Size = UDim2.new(1, 0, 1, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 MainFrame.BorderSizePixel = 0
-MainFrame.ZIndex = 1
 
 UIList.Parent = MainFrame
 UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 UIList.VerticalAlignment = Enum.VerticalAlignment.Center
-UIList.Padding = UDim.new(0.01, 0) -- Khoảng cách cực nhỏ để chữ nở to nhất
+UIList.Padding = UDim.new(0.01, 0)
 
--- Hàm tạo nhãn với kích thước đồng nhất
 local function createLabel(name)
     local label = Instance.new("TextLabel")
     label.Name = name
     label.Parent = MainFrame
-    -- Mỗi dòng chiếm ~30% chiều cao để 3 dòng cộng lại là ~90% màn hình
     label.Size = UDim2.new(0.98, 0, 0.3, 0) 
     label.BackgroundTransparency = 1
     label.Font = Enum.Font.FredokaOne
-    label.TextColor3 = Color3.fromRGB(0, 255, 127) -- Chữ xanh
+    label.TextColor3 = Color3.fromRGB(0, 255, 127)
     label.TextScaled = true
     label.RichText = true
-    label.Text = ""
-    
     return label
 end
 
--- Khởi tạo 3 dòng to bằng nhau
-local LTotal = createLabel("LTotal") -- Dòng 1
-local LDiff  = createLabel("LDiff")  -- Dòng 2
-local LTime  = createLabel("LTime")  -- Dòng 3
+local LTotal = createLabel("LTotal")
+local LDiff  = createLabel("LDiff") 
+local LTime  = createLabel("LTime")
 
--- Nút Bấm Ẩn/Hiện
 local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Name = "ToggleBtn"
 ToggleBtn.Parent = HopGui
 ToggleBtn.Size = UDim2.new(0, 100, 0, 40)
 ToggleBtn.Position = UDim2.new(0, 10, 1, -50)
@@ -80,69 +75,54 @@ ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.Text = "HIDE GUI"
 ToggleBtn.Font = Enum.Font.FredokaOne
-ToggleBtn.TextSize = 14
 ToggleBtn.ZIndex = 10
-
 ToggleBtn.MouseButton1Click:Connect(function()
     isVisible = not isVisible
     MainFrame.Visible = isVisible
 end)
 
 --------------------------------------------------
--- LOGIC DỮ LIỆU & KIỂM TRA
+-- LOGIC DỮ LIỆU
 --------------------------------------------------
 local function GetValue()
-    local success, ClientData = pcall(function()
-        return require(game.ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("Core"):WaitForChild("ClientData"))
+    local success, data = pcall(function()
+        return ClientDataModule.get_data()[player.Name]
     end)
-    if success and ClientData then
-        local data = ClientData.get_data()[player.Name]
-        if data then
-            return (data.inventory and data.inventory.currencies and data.inventory.currencies[CURRENCY_NAME]) or data[CURRENCY_NAME]
-        end
+    if success and data then
+        return (data.inventory and data.inventory.currencies and data.inventory.currencies[CURRENCY_NAME]) or data[CURRENCY_NAME]
     end
     return nil
 end
 
 local function ApplyStyle(err)
-    isErrorState = err
     local bg = err and Color3.fromRGB(255, 0, 0) or Color3.fromRGB(0, 0, 0)
     local txt = err and Color3.fromRGB(0, 0, 0) or Color3.fromRGB(0, 255, 127)
-    
     MainFrame.BackgroundColor3 = bg
     LTotal.TextColor3 = txt
     LDiff.TextColor3 = txt
     LTime.TextColor3 = txt
 end
 
--- Vòng lặp cập nhật (Mỗi giây)
+-- VÒNG LẶP CẬP NHẬT GUI (20 GIÂY/LẦN)
 task.spawn(function()
     while true do
-        -- Cập nhật Thời gian
+        -- 1. Thời gian
         local elapsed = os.time() - startTime
-        local h = math.floor(elapsed / 3600)
-        local m = math.floor((elapsed % 3600) / 60)
-        LTime.Text = h .. " : " .. m
+        LTime.Text = math.floor(elapsed / 3600) .. " : " .. math.floor((elapsed % 3600) / 60)
         
-        -- Cập nhật Số liệu
+        -- 2. Số liệu
         local currentVal = GetValue()
         if currentVal then
             LTotal.Text = tostring(currentVal)
-            if lastValue ~= -1 then
-                local diff = currentVal - lastValue
-                LDiff.Text = (diff > 0 and "+" or "") .. tostring(diff)
-            else
-                LDiff.Text = "0"
-            end
+            LDiff.Text = (displayDiff > 0 and "+" or "") .. tostring(displayDiff)
         end
-        task.wait(15)
+        task.wait(UI_REFRESH_RATE)
     end
 end)
 
--- Vòng lặp kiểm tra Kick (12 phút)
+-- VÒNG LẶP KIỂM TRA KICK (12 PHÚT/LẦN)
 task.spawn(function()
-    -- Lấy mốc dữ liệu đầu tiên
-    repeat lastValue = GetValue() task.wait(1) until lastValue ~= nil
+    repeat lastValue = GetValue() task.wait(2) until lastValue ~= nil
     
     while true do
         task.wait(CHECK_INTERVAL)
@@ -150,13 +130,14 @@ task.spawn(function()
         
         if newVal ~= nil then
             if newVal == lastValue then
-                ApplyStyle(true) -- Đổi màu cảnh báo
+                ApplyStyle(true)
                 task.wait(2)
-                player:Kick("\n[HỆ THỐNG]\nGingerbread không thay đổi trong 12 phút!")
+                player:Kick("Gingerbread không đổi trong 12 phút!")
                 return
             else
+                displayDiff = newVal - lastValue
                 lastValue = newVal
-                ApplyStyle(false) -- Trở lại bình thường
+                ApplyStyle(false)
             end
         end
     end
