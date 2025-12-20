@@ -120,12 +120,6 @@ task.spawn(function()
                 task.wait(2)
                 player:Kick("Gingerbread không đổi trong 12 phút!")
                 return
-            elseif diff == 1908 then
-                displayDiff = diff
-                ApplyStyle(true)
-                task.wait(2)
-                player:Kick("Phát hiện tăng đúng 1908!")
-                return
             else
                 displayDiff = diff
                 lastValue = newVal
