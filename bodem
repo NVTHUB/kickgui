@@ -1,5 +1,7 @@
 --[[ 
-    - Hiển thị số buck và potion hiện tại và kiếm được, sau 5 phút không kiếm được thì kick
+    SYSTEM MONITOR: BUCKS & POTIONS (FIXED TOGGLE)
+    - Tất cả dữ liệu cập nhật mỗi 5 phút.
+    - Nút Toggle đã được fix ZIndex để luôn bấm được.
 ]]
 
 task.wait(10)
@@ -111,7 +113,7 @@ end
 task.spawn(function()
     while true do
         local elapsed = os.time() - startTime
-        LTime.Text = math.floor(elapsed / 3600) .. "H " .. math.floor((elapsed % 3600) / 60) .. "MIN"
+        LTime.Text = math.floor(elapsed / 3600) .. "H " .. math.floor((elapsed % 3600) / 60) .. "Min"
         
         LPotion.Text = "Potion : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
         
