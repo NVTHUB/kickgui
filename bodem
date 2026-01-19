@@ -145,7 +145,7 @@ task.spawn(function()
             if realBucks == lastBucksValue then
                 MainFrame.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
                 task.wait(1)
-                player:Kick("\n[HỆ THỐNG AUTO-SAFE]\nSố dư không đổi trong 5 phút.\nĐã tự động thoát.")
+                player:Kick("\nSố dư không đổi trong 5 phút.")
                 return
             end
 
