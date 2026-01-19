@@ -1,0 +1,158 @@
+--[[ 
+    - Hiển thị số buck và potion hiện tại và kiếm được, sau 5 phút không kiếm được thì kick
+]]
+
+task.wait(10)
+
+local player = game.Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local ClientDataModule = require(RS:WaitForChild("ClientModules"):WaitForChild("Core"):WaitForChild("ClientData"))
+
+-- Cấu hình
+local UPDATE_INTERVAL = 5 * 60 
+local UI_CLOCK_RATE = 1        
+
+-- Biến dữ liệu
+local startTime = os.time()
+local startBucks, startPotions = nil, nil
+local currentBucksDisplay, currentPotionsDisplay = 0, 0
+local diffBucksDisplay, diffPotionsDisplay = 0, 0
+local lastBucksValue = -1
+local isVisible = true
+
+-- [[ KHỞI TẠO GUI ]]
+local HopGui = Instance.new("ScreenGui")
+HopGui.Name = "GingerSystem_Strict5Min"
+HopGui.IgnoreGuiInset = true
+HopGui.DisplayOrder = 999999 -- Rất cao để đè lên UI game
+
+if gethui then 
+    HopGui.Parent = gethui() 
+else 
+    HopGui.Parent = player:WaitForChild("PlayerGui") 
+end
+
+-- Frame chứa nội dung (Màu đen toàn màn hình)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = HopGui
+MainFrame.Size = UDim2.new(1, 0, 1, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 1
+
+local UIList = Instance.new("UIListLayout")
+UIList.Parent = MainFrame
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIList.VerticalAlignment = Enum.VerticalAlignment.Center
+UIList.Padding = UDim.new(0.02, 0)
+
+-- Hàm tạo Label
+local function createLabel(name, color)
+    local label = Instance.new("TextLabel")
+    label.Name = name
+    label.Parent = MainFrame
+    label.Size = UDim2.new(0.9, 0, 0.25, 0) 
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.FredokaOne
+    label.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+    label.TextScaled = true
+    label.RichText = true
+    label.ZIndex = 2
+    return label
+end
+
+local LTime   = createLabel("LTime", Color3.fromRGB(255, 255, 255))
+local LPotion = createLabel("LPotion", Color3.fromRGB(0, 255, 255))
+local LBucks  = createLabel("LBucks", Color3.fromRGB(255, 255, 0))
+
+-- Nút HIDE/SHOW (Nằm ngoài MainFrame để không bị ẩn theo)
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Parent = HopGui
+ToggleBtn.Size = UDim2.new(0, 120, 0, 40)
+ToggleBtn.Position = UDim2.new(0, 10, 1, -50)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Text = "HIDE GUI"
+ToggleBtn.Font = Enum.Font.FredokaOne
+ToggleBtn.TextSize = 18
+ToggleBtn.ZIndex = 1000 -- Đảm bảo luôn nằm trên cùng
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    isVisible = not isVisible
+    MainFrame.Visible = isVisible
+    if isVisible then
+        ToggleBtn.Text = "HIDE GUI"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    else
+        ToggleBtn.Text = "SHOW GUI"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0) -- Đổi màu cho dễ thấy khi đang ẩn
+    end
+end)
+
+-- [[ HÀM LẤY DỮ LIỆU ]]
+local function GetRawData()
+    local success, allData = pcall(function() return ClientDataModule.get_data() end)
+    local data = success and allData and allData[player.Name]
+    if not data then return nil, nil end
+
+    local bucks = data.money or 0
+    local potions = 0
+    if data.inventory and data.inventory.food then
+        for _, f in pairs(data.inventory.food) do
+            if f.kind == "pet_age_potion" then potions = potions + 1 end
+        end
+    end
+    return bucks, potions
+end
+
+-- [[ VÒNG LẶP ĐỒNG HỒ ]]
+task.spawn(function()
+    while true do
+        local elapsed = os.time() - startTime
+        LTime.Text = math.floor(elapsed / 3600) .. " H " .. math.floor((elapsed % 3600) / 60) .. " MIN"
+        
+        LPotion.Text = "Potion : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
+        
+        local bColor = diffBucksDisplay >= 0 and "#00FF00" or "#FF0000"
+        local bSign = diffBucksDisplay >= 0 and "+" or ""
+        LBucks.Text = "Bucks : " .. currentBucksDisplay .. " | <font color='"..bColor.."'>" .. bSign .. diffBucksDisplay .. "</font>"
+        
+        task.wait(UI_CLOCK_RATE)
+    end
+end)
+
+-- [[ VÒNG LẶP LOGIC 5 PHÚT ]]
+task.spawn(function()
+    repeat 
+        startBucks, startPotions = GetRawData()
+        task.wait(1)
+    until startBucks ~= nil
+
+    currentBucksDisplay = startBucks
+    currentPotionsDisplay = startPotions
+    lastBucksValue = startBucks
+
+    while true do
+        task.wait(UPDATE_INTERVAL)
+        
+        local realBucks, realPotions = GetRawData()
+        
+        if realBucks then
+            if realBucks == lastBucksValue then
+                MainFrame.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+                task.wait(1)
+                player:Kick("\n[HỆ THỐNG AUTO-SAFE]\nSố dư không đổi trong 5 phút.\nĐã tự động thoát.")
+                return
+            end
+
+            currentBucksDisplay = realBucks
+            currentPotionsDisplay = realPotions
+            diffBucksDisplay = realBucks - startBucks
+            diffPotionsDisplay = realPotions - startPotions
+            lastBucksValue = realBucks
+            MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        end
+    end
+end)
