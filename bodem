@@ -111,7 +111,7 @@ end
 task.spawn(function()
     while true do
         local elapsed = os.time() - startTime
-        LTime.Text = math.floor(elapsed / 3600) .. " H " .. math.floor((elapsed % 3600) / 60) .. " MIN"
+        LTime.Text = math.floor(elapsed / 3600) .. "H " .. math.floor((elapsed % 3600) / 60) .. "MIN"
         
         LPotion.Text = "Potion : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
         
