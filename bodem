@@ -115,11 +115,11 @@ task.spawn(function()
         local elapsed = os.time() - startTime
         LTime.Text = math.floor(elapsed / 3600) .. ":" .. string.format("%02d", math.floor((elapsed % 3600) / 60))
         
-        LPotion.Text = "P : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
+        LPotion.Text = "TUNG : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
         
         local bColor = diffBucksDisplay >= 0 and "#00FF00" or "#FF0000"
         local bSign = diffBucksDisplay >= 0 and "+" or ""
-        LBucks.Text = "B : " .. currentBucksDisplay .. " | <font color='"..bColor.."'>" .. bSign .. diffBucksDisplay .. "</font>"
+        LBucks.Text = "PHUONG : " .. currentBucksDisplay .. " | <font color='"..bColor.."'>" .. bSign .. diffBucksDisplay .. "</font>"
         
         task.wait(UI_CLOCK_RATE)
     end
