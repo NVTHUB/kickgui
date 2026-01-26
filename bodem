@@ -11,7 +11,7 @@ local RS = game:GetService("ReplicatedStorage")
 local ClientDataModule = require(RS:WaitForChild("ClientModules"):WaitForChild("Core"):WaitForChild("ClientData"))
 
 -- Cấu hình
-local UPDATE_INTERVAL = 5 * 60 
+local UPDATE_INTERVAL = 10 * 60 
 local UI_CLOCK_RATE = 1        
 
 -- Biến dữ liệu
