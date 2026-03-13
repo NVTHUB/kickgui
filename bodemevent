@@ -1,0 +1,167 @@
+--[[ 
+    SYSTEM MONITOR: EGGS 2026 & POTIONS
+    - Cập nhật dữ liệu từ Root Data (data['eggs_2026']).
+    - Logic: Kick nếu số lượng Eggs không thay đổi trong 15 phút.
+    - Nút Toggle fix ZIndex để luôn bấm được.
+]]
+
+task.wait(10)
+
+local player = game.Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local ClientDataModule = require(RS:WaitForChild("ClientModules"):WaitForChild("Core"):WaitForChild("ClientData"))
+
+-- Cấu hình
+local CURRENCY_KEY = "eggs_2026"
+local UPDATE_INTERVAL = 15 * 60 -- 15 Phút
+local UI_CLOCK_RATE = 1        
+
+-- Biến dữ liệu
+local startTime = os.time()
+local startEggs, startPotions = nil, nil
+local currentEggsDisplay, currentPotionsDisplay = 0, 0
+local diffEggsDisplay, diffPotionsDisplay = 0, 0
+local lastEggsValue = -1
+local isVisible = true
+
+-- [[ KHỞI TẠO GUI ]]
+local HopGui = Instance.new("ScreenGui")
+HopGui.Name = "GingerSystem_EggsMonitor"
+HopGui.IgnoreGuiInset = true
+HopGui.DisplayOrder = 999999 
+
+if gethui then 
+    HopGui.Parent = gethui() 
+else 
+    HopGui.Parent = player:WaitForChild("PlayerGui") 
+end
+
+-- Frame chứa nội dung (Màu đen toàn màn hình)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = HopGui
+MainFrame.Size = UDim2.new(1, 0, 1, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 1
+
+local UIList = Instance.new("UIListLayout")
+UIList.Parent = MainFrame
+UIList.HorizontalAlignment = Enum.HorizontalAlignment.Center
+UIList.VerticalAlignment = Enum.VerticalAlignment.Center
+UIList.Padding = UDim.new(0.02, 0)
+
+-- Hàm tạo Label
+local function createLabel(name, color)
+    local label = Instance.new("TextLabel")
+    label.Name = name
+    label.Parent = MainFrame
+    label.Size = UDim2.new(0.9, 0, 0.25, 0) 
+    label.BackgroundTransparency = 1
+    label.Font = Enum.Font.FredokaOne
+    label.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+    label.TextScaled = true
+    label.RichText = true
+    label.ZIndex = 2
+    return label
+end
+
+local LTime   = createLabel("LTime", Color3.fromRGB(255, 255, 255))
+local LPotion = createLabel("LPotion", Color3.fromRGB(0, 255, 255))
+local LEggs   = createLabel("LEggs", Color3.fromRGB(255, 255, 0))
+
+-- Nút HIDE/SHOW
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Parent = HopGui
+ToggleBtn.Size = UDim2.new(0, 120, 0, 40)
+ToggleBtn.Position = UDim2.new(0, 10, 1, -50)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Text = "HIDE GUI"
+ToggleBtn.Font = Enum.Font.FredokaOne
+ToggleBtn.TextSize = 18
+ToggleBtn.ZIndex = 1000 
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    isVisible = not isVisible
+    MainFrame.Visible = isVisible
+    if isVisible then
+        ToggleBtn.Text = "HIDE GUI"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    else
+        ToggleBtn.Text = "SHOW GUI"
+        ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+    end
+end)
+
+-- [[ HÀM LẤY DỮ LIỆU ]]
+local function GetRawData()
+    local success, allData = pcall(function() return ClientDataModule.get_data() end)
+    local data = success and allData and allData[player.Name]
+    if not data then return nil, nil end
+
+    -- Lấy tiền Eggs 2026 trực tiếp từ Root Data
+    local eggs = data[CURRENCY_KEY] or 0 
+    
+    local potions = 0
+    if data.inventory and data.inventory.food then
+        for _, f in pairs(data.inventory.food) do
+            if f.kind == "pet_age_potion" then potions = potions + 1 end
+        end
+    end
+    return eggs, potions
+end
+
+-- [[ VÒNG LẶP ĐỒNG HỒ UI ]]
+task.spawn(function()
+    while true do
+        local elapsed = os.time() - startTime
+        LTime.Text = math.floor(elapsed / 3600) .. ":" .. string.format("%02d", math.floor((elapsed % 3600) / 60))
+        
+        LPotion.Text = "POTIONS : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
+        
+        local eColor = diffEggsDisplay >= 0 and "#00FF00" or "#FF0000"
+        local eSign = diffEggsDisplay >= 0 and "+" or ""
+        LEggs.Text = "EGGS : " .. currentEggsDisplay .. " | <font color='"..eColor.."'>" .. eSign .. diffEggsDisplay .. "</font>"
+        
+        task.wait(UI_CLOCK_RATE)
+    end
+end)
+
+-- [[ VÒNG LẶP LOGIC 15 PHÚT ]]
+task.spawn(function()
+    repeat 
+        startEggs, startPotions = GetRawData()
+        task.wait(1)
+    until startEggs ~= nil
+
+    currentEggsDisplay = startEggs
+    currentPotionsDisplay = startPotions
+    lastEggsValue = startEggs
+
+    while true do
+        task.wait(UPDATE_INTERVAL)
+        
+        local realEggs, realPotions = GetRawData()
+        
+        if realEggs then
+            -- Chỉ Kick nếu số lượng Eggs đứng yên hoàn toàn
+            if realEggs == lastEggsValue then
+                MainFrame.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+                task.wait(1)
+                player:Kick("\n[Hệ thống]: Số dư Eggs không thay đổi trong 15 phút.")
+                return
+            end
+
+            currentEggsDisplay = realEggs
+            currentPotionsDisplay = realPotions
+            diffEggsDisplay = realEggs - startEggs
+            diffPotionsDisplay = realPotions - startPotions
+            
+            -- Cập nhật giá trị để so sánh cho chu kỳ 15 phút tiếp theo
+            lastEggsValue = realEggs
+            MainFrame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        end
+    end
+end)
