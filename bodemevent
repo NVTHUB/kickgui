@@ -123,7 +123,7 @@ task.spawn(function()
         
         local eColor = diffEggsDisplay >= 0 and "#00FF00" or "#FF0000"
         local eSign = diffEggsDisplay >= 0 and "+" or ""
-        LEggs.Text = "HUHI : " .. currentEggsDisplay .. " | <font color='"..eColor.."'>" .. eSign .. diffEggsDisplay .. "</font>"
+        LEggs.Text = "HIHI : " .. currentEggsDisplay .. " | <font color='"..eColor.."'>" .. eSign .. diffEggsDisplay .. "</font>"
         
         task.wait(UI_CLOCK_RATE)
     end
