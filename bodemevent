@@ -119,11 +119,11 @@ task.spawn(function()
         local elapsed = os.time() - startTime
         LTime.Text = math.floor(elapsed / 3600) .. ":" .. string.format("%02d", math.floor((elapsed % 3600) / 60))
         
-        LPotion.Text = "POTIONS : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
+        LPotion.Text = "HAHA : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
         
         local eColor = diffEggsDisplay >= 0 and "#00FF00" or "#FF0000"
         local eSign = diffEggsDisplay >= 0 and "+" or ""
-        LEggs.Text = "EGGS : " .. currentEggsDisplay .. " | <font color='"..eColor.."'>" .. eSign .. diffEggsDisplay .. "</font>"
+        LEggs.Text = "HUHI : " .. currentEggsDisplay .. " | <font color='"..eColor.."'>" .. eSign .. diffEggsDisplay .. "</font>"
         
         task.wait(UI_CLOCK_RATE)
     end
@@ -150,7 +150,7 @@ task.spawn(function()
             if realEggs == lastEggsValue then
                 MainFrame.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
                 task.wait(1)
-                player:Kick("\n[Hệ thống]: Số dư Eggs không thay đổi trong 15 phút.")
+                player:Kick("Huhu. Script ngu")
                 return
             end
 
