@@ -1,10 +1,3 @@
---[[ 
-    SYSTEM MONITOR: EGGS 2026 & POTIONS
-    - Cập nhật dữ liệu từ Root Data (data['eggs_2026']).
-    - Logic: Kick nếu số lượng Eggs không thay đổi trong 15 phút.
-    - Nút Toggle fix ZIndex để luôn bấm được.
-]]
-
 task.wait(10)
 
 local player = game.Players.LocalPlayer
@@ -119,11 +112,11 @@ task.spawn(function()
         local elapsed = os.time() - startTime
         LTime.Text = math.floor(elapsed / 3600) .. ":" .. string.format("%02d", math.floor((elapsed % 3600) / 60))
         
-        LPotion.Text = "HAHA : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
+        LPotion.Text = "HIHI : " .. currentPotionsDisplay .. " | <font color='#00FF00'>+" .. diffPotionsDisplay .. "</font>"
         
         local eColor = diffEggsDisplay >= 0 and "#00FF00" or "#FF0000"
         local eSign = diffEggsDisplay >= 0 and "+" or ""
-        LEggs.Text = "HIHI : " .. currentEggsDisplay .. " | <font color='"..eColor.."'>" .. eSign .. diffEggsDisplay .. "</font>"
+        LEggs.Text = "HAHA : " .. currentEggsDisplay .. " | <font color='"..eColor.."'>" .. eSign .. diffEggsDisplay .. "</font>"
         
         task.wait(UI_CLOCK_RATE)
     end
@@ -150,7 +143,7 @@ task.spawn(function()
             if realEggs == lastEggsValue then
                 MainFrame.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
                 task.wait(1)
-                player:Kick("Huhu. Script ngu")
+                player:Kick("\n[HUuhu]: Bye bye.")
                 return
             end
 
