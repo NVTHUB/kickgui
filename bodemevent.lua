@@ -6,7 +6,7 @@ local ClientDataModule = require(RS:WaitForChild("ClientModules"):WaitForChild("
 
 -- Cấu hình
 local CURRENCY_KEY = "eggs_2026"
-local UPDATE_INTERVAL = 15 * 60 -- 15 Phút
+local UPDATE_INTERVAL = 30 * 60 -- 15 Phút
 local UI_CLOCK_RATE = 1        
 
 -- Biến dữ liệu
